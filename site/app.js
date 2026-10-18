@@ -1,7 +1,8 @@
 // Midnight Stats: unofficial app for the L'Alqueria del Basket senior league.
 // Live data (calendar, standings, scores) comes straight from the public NBN23 API used by the
-// official website; per-player stats come from data/groups/<groupId>.json, which
-// `python -m midnight_stats.build` generates from the official scoresheets.
+// official website; per-player stats come from the workflow or an on-demand scoresheet check.
+
+import { restoreManualStats, readScoresheet, incorporateManualMatch } from "./manual-reader.js?v=10";
 
 const API_BASE = "https://api.swish.nbn23.com";
 // Public read-only key published by alqueriadelbasket.com in its NBN23 widget.
@@ -85,6 +86,8 @@ function timeAgo(iso) {
 /* --------------------------------------------------------------------- data access */
 
 const memo = new Map();
+const scoresheetChecks = new Map();
+let currentContext = null;
 
 function cached(key, ttl, loader) {
   const hit = memo.get(key);
@@ -105,12 +108,14 @@ const api = (path, ttl = 25000) => cached(`api:${path}`, ttl, async () => {
 });
 
 const statsFor = (groupId) => cached(`stats:${groupId}`, 120000, async () => {
+  let published = null;
   try {
     const response = await fetch(`data/groups/${groupId}.json`, { cache: "no-cache" });
-    return response.ok ? response.json() : null;
+    if (response.ok) published = await response.json();
   } catch {
-    return null;
+    // A locally checked scoresheet can still be available when the published data is unreachable.
   }
+  return restoreManualStats(published, groupId, storage);
 });
 
 async function getContext() {
@@ -353,8 +358,8 @@ function legend(items) {
 }
 
 function noStats(ctx) {
-  return `<div class="notice">Todavía no hay estadísticas de jugadores para este grupo. Se generan a partir de
-    las actas oficiales cuando se ejecuta <code>python -m midnight_stats.build</code>.</div>`;
+  return `<div class="notice">Todavía no hay estadísticas de jugadores para este grupo. Se incorporan a partir de
+    las actas oficiales. También puedes abrir un partido terminado y pulsar «Comprobar acta».</div>`;
 }
 
 function footer(ctx) {
@@ -704,6 +709,70 @@ function previewTab(ctx, m) {
   </div>`;
 }
 
+function scoresheetCheckPanel(ctx, match) {
+  if (!isFinal(match) || isBye(match) || statsMatch(ctx, match.id)
+    || !ctx.matches.some((known) => known.id === match.id)) return "";
+  const state = scoresheetChecks.get(match.id);
+  return `<section class="card card-pad scoresheet-check" data-scoresheet-check="${esc(match.id)}">
+    <button type="button" class="btn" data-action="check-scoresheet" data-match-id="${esc(match.id)}"
+      data-group-id="${esc(ctx.group.id)}" ${state?.pending ? "disabled" : ""}>${state?.pending ? "Comprobando acta…" : "Comprobar acta"}</button>
+    <p class="small subtle" role="status" aria-live="polite">${esc(state?.message
+      || "Busca el acta oficial y añade las estadísticas en este dispositivo. La primera comprobación puede tardar un poco más.")}</p>
+  </section>`;
+}
+
+function updateScoresheetCheck(id, pending, message) {
+  scoresheetChecks.set(id, { pending, message });
+  const panel = document.querySelector(`[data-scoresheet-check="${id}"]`);
+  if (!panel) return;
+  const button = panel.querySelector("button");
+  button.disabled = pending;
+  button.textContent = pending ? "Comprobando acta…" : "Comprobar acta";
+  panel.querySelector('[role="status"]').textContent = message;
+}
+
+async function checkScoresheet(id, groupId) {
+  const ctx = currentContext;
+  const known = ctx?.matches.find((match) => match.id === id);
+  if (!known || isBye(known) || ctx.group.id !== groupId || scoresheetChecks.get(id)?.pending) return;
+  const onProgress = (message) => updateScoresheetCheck(id, true, message);
+  const notPublished = "El acta todavía no está publicada. Prueba dentro de unos minutos.";
+  onProgress("Buscando acta…");
+  try {
+    memo.delete(`stats:${groupId}`);
+    const published = await statsFor(groupId);
+    if (published?.matches?.[id]) {
+      scoresheetChecks.delete(id);
+      if (currentContext?.group.id === groupId) await render({ keepScroll: true });
+      return;
+    }
+    const detail = await api(`/match/${id}`, 0);
+    const match = { ...known, ...detail, round: known.round };
+    if (!isFinal(match)) {
+      updateScoresheetCheck(id, false, "El partido todavía no ha finalizado.");
+      return;
+    }
+    if (!detail.scoresheetUrl) {
+      updateScoresheetCheck(id, false, notPublished);
+      return;
+    }
+    const roster = await api(`/match/${id}/players`, 0);
+    const parsed = await readScoresheet(match, detail, roster, onProgress);
+    const base = published || ctx.stats || {
+      group_id: groupId, group_name: ctx.group.name, generated_at: null,
+      _server_generated_at: null, matches: {}, players: [], teams: [], rosters: {},
+    };
+    const merged = await incorporateManualMatch(base, groupId, parsed, storage, onProgress);
+    memo.set(`stats:${groupId}`, { time: Date.now(), promise: Promise.resolve(merged) });
+    scoresheetChecks.delete(id);
+    if (currentContext?.group.id === groupId) await render({ keepScroll: true });
+  } catch (error) {
+    console.warn("The manual scoresheet check failed", error);
+    updateScoresheetCheck(id, false, error.code === "not-published" ? notPublished
+      : "No se ha podido comprobar el acta. Revisa la conexión y vuelve a intentarlo.");
+  }
+}
+
 async function viewMatch(ctx, id, tab) {
   const known = ctx.matches.find((x) => x.id === id);
   const detail = await api(`/match/${id}`, known && isLive(known) ? 20000 : 60000);
@@ -755,7 +824,7 @@ async function viewMatch(ctx, id, tab) {
 
   return `<div class="stack">${header}${adminNote}
     ${tabs([["estadisticas", "Estadísticas", base], ["anotacion", "Anotación", `${base}/anotacion`], ["graficos", "Gráficos", `${base}/graficos`], ["acta", "Acta", `${base}/acta`]], active)}
-    ${body}</div>${footer(ctx)}`;
+    ${scoresheetCheckPanel(ctx, m)}${body}</div>${footer(ctx)}`;
 }
 
 /* --------------------------------------------------------------------- team */
@@ -1158,6 +1227,7 @@ async function render({ keepScroll = false } = {}) {
     const html = await route.view(ctx, ...args);
     if (token !== renderToken) return;
     const scroll = window.scrollY;
+    currentContext = ctx;
     app.innerHTML = html;
     window.scrollTo(0, keepScroll ? scroll : 0);
     updateChrome(ctx, route, args);
@@ -1182,6 +1252,7 @@ document.addEventListener("click", (event) => {
     drawCharts();
   }
   if (action?.dataset.action === "retry") render();
+  if (action?.dataset.action === "check-scoresheet") checkScoresheet(action.dataset.matchId, action.dataset.groupId);
   if (action?.dataset.action === "favorite") {
     storage.set("settings", { ...storage.get("settings", {}), favoriteTeamId: action.dataset.team, favoriteTeamName: action.dataset.name });
     render({ keepScroll: true });

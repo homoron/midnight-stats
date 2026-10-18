@@ -12,7 +12,7 @@ temporadas anteriores. Ver `README.md`.
 - La interfaz va en **español**. El código, los comentarios y los nombres de variables, **siempre en inglés**.
   Los textos de los tests (nombres de las funciones `test_...`) pueden ir en español.
 - **TDD obligatorio** para cualquier funcionalidad nueva de Python: primero el test, comprobar que falla, implementar
-  lo mínimo y refactorizar. Ahora mismo hay 51 tests en verde (`py -3.14 -m pytest`).
+  lo mínimo y refactorizar. Ahora mismo hay 59 tests en verde (`py -3.14 -m pytest`).
 - Python: en esta máquina usar `py -3.14`, porque `python` es la 3.9 y el proyecto necesita 3.10 o superior.
   Node local: v14 (antiguo).
 - `graphify-out/`, `cache/`, `site/data/`, `logs/` y `reports/` están en `.gitignore`. No subirlos.
@@ -26,6 +26,7 @@ midnight_stats/leverade.py    Dorsales inscritos por equipo (API pública de Lev
 midnight_stats/scoresheet.py  Lector del acta PDF con pdfplumber, por coordenadas
 midnight_stats/stats.py       Cruce con plantillas, acumulados por jugador y equipo, inscritos sin partidos
 midnight_stats/build.py       Genera site/data/index.json y site/data/groups/<groupId>.json
+midnight_stats/browser.py     Comparte el parser y la agregación con el worker del navegador
 midnight_stats/validate.py    Validación de consistencia de las actas (informe en Markdown)
 plantillas.json       Nombres y fotos a mano (MIDNIGHT completo: 14 jugadores con foto)
 .github/workflows/update.yml   Tests, generación de datos y despliegue en GitHub Pages
@@ -36,8 +37,13 @@ plantillas.json       Nombres y fotos a mano (MIDNIGHT completo: 14 jugadores co
   `Authorization: <clave pública>`. La clave es la que publica alqueriadelbasket.com en su widget; está en
   `site/app.js` y en `midnight_stats/api.py`. La API admite CORS `*`.
 - **Estadísticas de jugadores:** solo existen en el **PDF del acta** (`scoresheetUrl` de `/match/{id}`, en
-  storage.googleapis.com). Ese almacenamiento **no admite CORS**, así que el navegador no puede leerlo y las
-  estadísticas se generan con `python -m midnight_stats.build`, en el workflow. El acta se publica 1–2 min después del partido.
+  storage.googleapis.com). Las estadísticas compartidas se generan con `python -m midnight_stats.build`, en
+  el workflow. «Comprobar acta» descarga el mismo PDF mediante la API JSON pública de Google Storage, que sí
+  admite CORS, y ejecuta el mismo parser en Pyodide. El resultado manual se guarda por navegador; los datos
+  publicados tienen prioridad y no se duplican partidos. El acta se publica 1–2 min después del partido.
+- **Lector manual:** `python -m midnight_stats.browser` genera `site/reader.zip` (ignorado por git), también en
+  el workflow. `site/manual-reader.js` conserva las actas locales; `site/reader-worker.js` carga Pyodide solo
+  al necesitarlo. No usa backend, secretos ni la API privada de Swish.
 - **Cómo se lee el acta:** cada fila del tanteo arrastrado es un punto. El salto respecto al marcador anterior del
   equipo da el tipo de canasta: +1 tiro libre, +2 canasta de 2, +3 triple. Los números impresos van en negro y lo
   que escribe el anotador en color. Los titulares son la X rodeada con un círculo (una curva en el PDF). Las faltas
@@ -75,6 +81,8 @@ py -3.14 -m pip install -r requirements.txt
 py -3.14 -m pytest
 py -3.14 -m midnight_stats.build                       # Quinta, temporada actual
 py -3.14 -m midnight_stats.build --season 2025/2026    # temporada pasada (las actas en cache/ no se vuelven a bajar)
+py -3.14 -m midnight_stats.browser                   # empaqueta las fuentes del lector manual
+node tests/test_manual_reader.mjs
 py -3.14 -m http.server 8765 --directory site  # abrir http://localhost:8765
 ```
 
@@ -92,4 +100,4 @@ py -3.14 -m http.server 8765 --directory site  # abrir http://localhost:8765
 6. Tener en cuenta que GitHub desactiva los workflows programados tras 60 días sin actividad en el repositorio.
 
 Ideas pendientes (si el usuario las pide): mínimo de partidos para entrar en los líderes de medias; APK con
-Capacitor leyendo las actas en el propio móvil (una app nativa no tiene CORS; habría que portar el parser a JS).
+Capacitor (el lector manual web ya puede procesar actas en el navegador con Pyodide).

@@ -15,7 +15,7 @@ Abre la app sin registro en <https://homoron.github.io/midnight-stats/>.
 | Dato | Origen |
 |---|---|
 | Calendario, horarios, marcadores, parciales, clasificación | **En directo** desde la API pública de NBN23 (`api.swish.nbn23.com`), la misma que usa el widget de alqueriadelbasket.com. El navegador la consulta cada vez que abres la app (y cada 30 s si hay un partido en juego) |
-| Estadísticas de jugadores | Se calculan a partir del **acta oficial en PDF** de cada partido (`python -m midnight_stats.build`). El navegador no puede descargar esos PDF (Google Storage no lo permite desde otras webs), así que se procesan aparte y se guardan en `site/data/` |
+| Estadísticas de jugadores | Se calculan a partir del **acta oficial en PDF** de cada partido (`python -m midnight_stats.build`) y se publican en `site/data/`. Si falta un partido terminado, «Comprobar acta» permite procesarlo en el propio navegador |
 | Plantilla completa (dorsales inscritos) | API pública de **Leverade**, la plataforma de gestión de la liga |
 | Nombres y fotos de jugadores sin partidos | A mano en `plantillas.json` (Leverade guarda nombres y fotos tras un login) |
 
@@ -29,6 +29,16 @@ El acta **no** registra fallos, rebotes, asistencias ni minutos, así que esos d
 Las estadísticas del acta se incorporan cuando el partido ha finalizado y el PDF ya está publicado.
 Los marcadores en directo se actualizan por separado desde el navegador.
 
+En la ficha de un partido terminado que aún no tiene estadísticas aparece **Comprobar acta**. Busca el PDF
+oficial y ejecuta el mismo parser de Python en un worker con Pyodide, que se descarga solo al necesitarlo.
+La primera comprobación puede tardar más. Si todavía no está publicada, se indica para intentarlo más tarde.
+El resultado actualiza el partido y los acumulados y se guarda **en ese navegador**; la siguiente publicación
+automática lo incorpora para todos y tiene prioridad, sin contar dos veces el partido.
+
+La URL habitual de Google Storage no permite CORS, pero su
+[API JSON pública sí lo admite](https://docs.cloud.google.com/storage/docs/cross-origin).
+Se usa esa ruta para descargar el mismo PDF público, sin proxy, credenciales ni API privada de Swish.
+
 Cada acta pasa por una validación automática:
 - la suma de puntos de los jugadores debe coincidir con el marcador;
 - los parciales deben sumar el resultado;
@@ -41,10 +51,13 @@ Cada acta pasa por una validación automática:
 py -3.14 -m pip install -r requirements.txt
 py -3.14 -m pytest
 py -3.14 -m midnight_stats.build
+py -3.14 -m midnight_stats.browser
+node tests/test_manual_reader.mjs
 py -3.14 -m http.server 8765 --directory site
 ```
 
-Después, abre <http://localhost:8765>.
+Después, abre <http://localhost:8765>. `midnight_stats.browser` empaqueta las fuentes en `site/reader.zip`;
+el workflow también lo genera antes de publicar. Este ZIP y los datos generados no se suben al repositorio.
 
 Opciones de `midnight_stats.build` (por defecto genera solo la Quinta masculina: Liga, Copa y Playoff):
 
@@ -85,8 +98,9 @@ py -3.14 -m midnight_stats.validate --season 2025/2026 --report reports/validaci
 
 Los horarios de GitHub Actions son aproximados: sus ejecuciones programadas pueden retrasarse o descartarse
 por carga del servicio. La programación evita los minutos redondos para reducir ese riesgo, pero no garantiza
-una actualización cada diez minutos. Si los datos se quedan antiguos, se puede lanzar el workflow manualmente
-desde Actions. Véase la [documentación de GitHub](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows).
+una actualización cada diez minutos. Si falta un partido terminado, se puede usar «Comprobar acta» desde su
+ficha; para actualizar los datos compartidos, se puede lanzar el workflow manualmente desde Actions.
+Véase la [documentación de GitHub](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows).
 
 En el móvil, «Añadir a pantalla de inicio» la instala como una app.
 
@@ -108,7 +122,8 @@ midnight_stats/
   scoresheet.py   Lectura del acta PDF (pdfplumber, por coordenadas)
   stats.py        Cruce con plantillas y acumulados de temporada
   build.py        Genera site/data/*.json
+  browser.py      Comparte el parser y los acumulados con el lector manual del navegador
   validate.py     Validación de consistencia de las actas
-site/             App web estática (HTML + CSS + JS, sin compilación)
+site/             App web estática (HTML + CSS + JS, lector manual en un worker)
 tests/            Tests (pytest) con un acta real como fixture
 ```

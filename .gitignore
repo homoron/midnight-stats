@@ -1,6 +1,7 @@
 # Generated data (rebuilt by `python -m midnight_stats.build`)
 cache/
 site/data/
+site/reader.zip
 logs/
 reports/
 

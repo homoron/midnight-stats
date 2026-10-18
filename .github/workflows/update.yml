@@ -40,7 +40,12 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Tests
-        run: python -m pytest -q
+        run: |
+          python -m pytest -q
+          node tests/test_manual_reader.mjs
+
+      - name: Preparar lector de actas del navegador
+        run: python -m midnight_stats.browser
 
       # Parsed scoresheets and previous seasons survive between runs, so only new matches are downloaded.
       - uses: actions/cache@v4
