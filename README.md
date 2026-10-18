@@ -8,6 +8,8 @@ Quirónsalud de L'Alqueria del Basket. Incluye:
 - estadísticas por equipo y por jugador, con la plantilla completa de cada equipo, y líderes de la división;
 - consulta de temporadas anteriores.
 
+Abre la app sin registro en <https://homoron.github.io/midnight-stats/>.
+
 ## Cómo funciona
 
 | Dato | Origen |
@@ -79,6 +81,9 @@ py -3.14 -m midnight_stats.validate --season 2025/2026 --report reports/validaci
 4. Para cargar una temporada antigua, ve a **Actions → Actualizar estadísticas → Run workflow** e indica la temporada.
 
 En el móvil, «Añadir a pantalla de inicio» la instala como una app.
+
+GitHub desactiva los workflows programados de los repositorios públicos tras 60 días sin actividad.
+Si ocurre, vuelve a activar «Actualizar estadísticas» en la pestaña Actions y ejecútalo manualmente.
 
 ## Límites de la API
 
