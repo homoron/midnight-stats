@@ -711,8 +711,8 @@ function previewTab(ctx, m) {
 }
 
 function scoresheetProgress(completed) {
-  const { percent, completed: count, total } = readerProgress(completed);
-  const label = `${percent} % · ${count} de ${total} tareas completadas`;
+  const { percent } = readerProgress(completed);
+  const label = `${percent} %`;
   return `<progress max="100" value="${percent}" aria-label="Progreso de comprobación del acta"
     aria-valuetext="${label}"></progress><span class="small subtle">${label}</span>`;
 }
