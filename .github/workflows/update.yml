@@ -65,33 +65,6 @@ jobs:
           fi
           python -m midnight_stats.build
 
-      - name: Preparar prueba del acta de Narovella
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          from midnight_stats.browser import merge_matches
-
-          group_id = "6ab154cfd73638d9954bcd6a"
-          match_id = "6ab154d2d73638d9954bd1d7"
-          path = Path("site/data/groups") / f"{group_id}.json"
-          group = json.loads(path.read_text(encoding="utf-8"))
-          assert match_id in group["matches"], "The requested scoresheet is missing"
-          remaining = [match for key, match in group["matches"].items() if key != match_id]
-          preview = merge_matches({**group, "matches": {}}, remaining)
-          assert set(preview["matches"]) == set(group["matches"]) - {match_id}
-          path.write_text(json.dumps(preview, ensure_ascii=False), encoding="utf-8")
-          index_path = Path("site/data/index.json")
-          index = json.loads(index_path.read_text(encoding="utf-8"))
-          for season in index["seasons"].values():
-              for entry in season["groups"]:
-                  if entry["id"] == group_id:
-                      entry["matches_with_stats"] = len(preview["matches"])
-          index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
-          print(f"Preview ready: {match_id} removed from published stats only")
-          PY
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
