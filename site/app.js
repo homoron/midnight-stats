@@ -911,7 +911,7 @@ async function viewPlayer(ctx, playerId) {
 /* --------------------------------------------------------------------- settings */
 
 async function viewSettings(ctx) {
-  const theme = storage.get("theme", "auto");
+  const theme = storage.get("theme", "light");
   const seasonOptions = ctx.seasons.map((s) => `<option value="${s._id}" ${s._id === ctx.season._id ? "selected" : ""}>${esc(s.name)}</option>`).join("");
   const groupOptions = ctx.groups.map((g) => (
     `<option value="${g.id}" ${g.id === ctx.group.id ? "selected" : ""}>${esc(titleCase(g.name))}</option>`
@@ -1118,7 +1118,7 @@ let renderToken = 0;
 let refreshTimer = null;
 
 function applyTheme() {
-  const theme = storage.get("theme", "auto");
+  const theme = storage.get("theme", "light");
   if (theme === "auto") delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;
 
@@ -1216,7 +1216,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 systemTheme.addEventListener("change", () => {
-  if (storage.get("theme", "auto") === "auto") {
+  if (storage.get("theme", "light") === "auto") {
     applyTheme();
     drawCharts();
   }
