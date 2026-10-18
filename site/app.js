@@ -460,7 +460,7 @@ async function viewStandings(ctx) {
     const team = ctx.teams.get(s.teamId) || { name: s.name, logo: s.logo };
     return `<tr class="link ${s.teamId === ctx.favoriteId ? "is-favorite" : ""}" data-href="#/equipo/${s.teamId}">
       <td class="t-left sticky"><a class="team-cell" href="#/equipo/${s.teamId}"><b class="pos">${s.position}</b>${logo(team, 24)}<span>${esc(s.name)}</span></a></td>
-      <td>${played}</td><td class="t-strong">${s.stats.wonMatches}</td><td>${s.stats.lostMatches}</td>
+      <td>${played}</td><td class="t-strong t-wins">${s.stats.wonMatches}</td><td class="t-losses">${s.stats.lostMatches}</td>
       <td>${played ? `${winPct}%` : "–"}</td><td>${played ? fmt1(ppg) : "–"}</td><td>${played ? fmt1(oppg) : "–"}</td>
       <td>${diff > 0 ? "+" : ""}${diff}</td>
       <td class="t-left">${streak(lastResults(ctx, s.teamId))}</td>
@@ -469,7 +469,7 @@ async function viewStandings(ctx) {
   return `<div class="stack">
     <div><h1 class="page-title">Clasificación</h1><div class="subtle small">${esc(titleCase(ctx.group.name))} · ${esc(ctx.season.name)}</div></div>
     <section class="card"><div class="table-wrap"><table>
-      <thead><tr><th class="t-left sticky">Equipo</th><th>PJ</th><th>V</th><th>D</th><th>%PG</th><th>PPP</th><th>PCPP</th><th>+/-</th><th class="t-left">Racha</th></tr></thead>
+      <thead><tr><th class="t-left sticky">Equipo</th><th>PJ</th><th class="t-wins">V</th><th class="t-losses">D</th><th>%PG</th><th>PPP</th><th>PCPP</th><th>+/-</th><th class="t-left">Racha</th></tr></thead>
       <tbody>${rows}</tbody></table></div></section>
     <p class="small muted">PJ partidos jugados · V victorias · D derrotas · %PG porcentaje de partidos ganados · PPP puntos por partido · PCPP puntos en contra por partido · +/- diferencia total.</p>
   </div>${footer(ctx)}`;

@@ -16,6 +16,7 @@
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --negative: #e34948;
+  --negative-ink: #b52b2b;
   --good: #0ca30c;
   --good-ink: #006300;
   --critical: #d03b3b;
@@ -42,6 +43,7 @@
     --series-1: #3987e5;
     --series-2: #d95926;
     --negative: #e66767;
+    --negative-ink: #e66767;
     --good-ink: #0ca30c;
     --highlight: rgba(217, 89, 38, 0.16);
     --shadow: none;
@@ -64,6 +66,7 @@
   --series-1: #3987e5;
   --series-2: #d95926;
   --negative: #e66767;
+  --negative-ink: #e66767;
   --good-ink: #0ca30c;
   --highlight: rgba(217, 89, 38, 0.16);
   --shadow: none;
@@ -309,6 +312,8 @@ th:last-child, td:last-child { padding-right: 16px; }
 .t-left { text-align: left; }
 .t-center { text-align: center; }
 .t-strong { font-weight: 700; }
+.t-wins { color: var(--good-ink); }
+.t-losses { color: var(--negative-ink); }
 tbody tr.link { cursor: pointer; }
 tbody tr.link:hover { background: var(--surface-2); }
 tr.is-favorite td { background: var(--highlight); }
