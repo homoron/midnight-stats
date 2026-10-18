@@ -31,13 +31,13 @@ function resetWorker(error) {
 
 function requestReader(action, payload, onProgress = () => {}) {
   if (!worker) {
-    worker = new Worker(new URL("reader-worker.js?v=10", import.meta.url));
+    worker = new Worker(new URL("reader-worker.js?v=11", import.meta.url));
     worker.onerror = () => resetWorker(new Error("The scoresheet reader could not start"));
     worker.onmessage = ({ data }) => {
       const request = requests.get(data.id);
       if (!request) return;
       if (data.type === "progress") {
-        request.onProgress(data.message);
+        request.onProgress(data.message, data.stage);
       } else if (data.type === "error") {
         resetWorker(new Error(data.message));
       } else {
@@ -56,7 +56,7 @@ function requestReader(action, payload, onProgress = () => {}) {
 }
 
 export async function readScoresheet(calendar, detail, roster, onProgress) {
-  onProgress("Descargando acta…");
+  onProgress("Descargando acta…", "download");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   let bytes;
@@ -114,7 +114,7 @@ export async function restoreManualStats(base, groupId, storage) {
 
 export async function incorporateManualMatch(base, groupId, match, storage, onProgress) {
   const checkedAt = new Date().toISOString();
-  onProgress("Actualizando estadísticas…");
+  onProgress("Actualizando estadísticas…", "update");
   const merged = await requestReader("merge", { base, matches: [match], checkedAt }, onProgress);
   const saved = readCache(storage, groupId);
   const baseGeneratedAt = Object.prototype.hasOwnProperty.call(base, "_server_generated_at")

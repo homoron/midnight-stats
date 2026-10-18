@@ -2,7 +2,7 @@
 // Live data (calendar, standings, scores) comes straight from the public NBN23 API used by the
 // official website; per-player stats come from the workflow or an on-demand scoresheet check.
 
-import { restoreManualStats, readScoresheet, incorporateManualMatch } from "./manual-reader.js?v=10";
+import { restoreManualStats, readScoresheet, incorporateManualMatch } from "./manual-reader.js?v=11";
 
 const API_BASE = "https://api.swish.nbn23.com";
 // Public read-only key published by alqueriadelbasket.com in its NBN23 widget.
@@ -709,6 +709,15 @@ function previewTab(ctx, m) {
   </div>`;
 }
 
+const SCORESHEET_STAGES = ["download", "prepare", "read", "update"];
+
+function scoresheetProgress(stage) {
+  const index = SCORESHEET_STAGES.indexOf(stage);
+  const label = index < 0 ? "Comprobando disponibilidad" : `Paso ${index + 1} de ${SCORESHEET_STAGES.length}`;
+  return `<progress max="${SCORESHEET_STAGES.length}" ${index < 0 ? "" : `value="${index}"`}
+    aria-label="Progreso de comprobación del acta" aria-valuetext="${label}"></progress><span class="small subtle">${label}</span>`;
+}
+
 function scoresheetCheckPanel(ctx, match) {
   if (!isFinal(match) || isBye(match) || statsMatch(ctx, match.id)
     || !ctx.matches.some((known) => known.id === match.id)) return "";
@@ -716,26 +725,31 @@ function scoresheetCheckPanel(ctx, match) {
   return `<section class="card card-pad scoresheet-check" data-scoresheet-check="${esc(match.id)}">
     <button type="button" class="btn" data-action="check-scoresheet" data-match-id="${esc(match.id)}"
       data-group-id="${esc(ctx.group.id)}" ${state?.pending ? "disabled" : ""}>${state?.pending ? "Comprobando acta…" : "Comprobar acta"}</button>
+    <div class="scoresheet-progress" ${state?.pending ? "" : "hidden"}>${state?.pending ? scoresheetProgress(state.stage) : ""}</div>
     <p class="small subtle" role="status" aria-live="polite">${esc(state?.message
       || "Busca el acta oficial y añade las estadísticas en este dispositivo. La primera comprobación puede tardar un poco más.")}</p>
   </section>`;
 }
 
-function updateScoresheetCheck(id, pending, message) {
-  scoresheetChecks.set(id, { pending, message });
+function updateScoresheetCheck(id, pending, message, stage) {
+  const status = pending ? `${message} Esto puede tardar unos minutos. No hace falta volver a pulsar.` : message;
+  scoresheetChecks.set(id, { pending, message: status, stage });
   const panel = document.querySelector(`[data-scoresheet-check="${id}"]`);
   if (!panel) return;
   const button = panel.querySelector("button");
   button.disabled = pending;
   button.textContent = pending ? "Comprobando acta…" : "Comprobar acta";
-  panel.querySelector('[role="status"]').textContent = message;
+  const progress = panel.querySelector(".scoresheet-progress");
+  progress.hidden = !pending;
+  progress.innerHTML = pending ? scoresheetProgress(stage) : "";
+  panel.querySelector('[role="status"]').textContent = status;
 }
 
 async function checkScoresheet(id, groupId) {
   const ctx = currentContext;
   const known = ctx?.matches.find((match) => match.id === id);
   if (!known || isBye(known) || ctx.group.id !== groupId || scoresheetChecks.get(id)?.pending) return;
-  const onProgress = (message) => updateScoresheetCheck(id, true, message);
+  const onProgress = (message, stage) => updateScoresheetCheck(id, true, message, stage);
   const notPublished = "El acta todavía no está publicada. Prueba dentro de unos minutos.";
   onProgress("Buscando acta…");
   try {

@@ -3,12 +3,12 @@ const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js";
 let runtimePromise = null;
 let queue = Promise.resolve();
 
-const progress = (id, message) => postMessage({ id, type: "progress", message });
+const progress = (id, message, stage) => postMessage({ id, type: "progress", message, stage });
 
 async function getRuntime(id) {
   if (!runtimePromise) {
     runtimePromise = (async () => {
-      progress(id, "Preparando lector…");
+      progress(id, "Preparando lector…", "prepare");
       importScripts(PYODIDE_URL);
       const runtime = await loadPyodide();
       await runtime.loadPackage(["micropip", "cryptography"]);
@@ -35,7 +35,7 @@ async function handle({ id, action, payload }) {
     runtime.globals.set("request_json", JSON.stringify(parameters));
     let result;
     if (action === "parse") {
-      progress(id, "Leyendo acta…");
+      progress(id, "Leyendo acta…", "read");
       runtime.globals.set("pdf_data", bytes);
       result = runtime.runPython(`request = json.loads(request_json)
 result = parse_match(bytes(pdf_data.to_py()), request["calendar"], request["detail"], request["roster"], request.get("uploadedAt"))
