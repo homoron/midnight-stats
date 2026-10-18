@@ -52,9 +52,11 @@ jobs:
           restore-keys: midnight-stats-data-
 
       - name: Generar estadísticas
+        env:
+          REQUESTED_SEASON: ${{ inputs.season }}
         run: |
-          if [ -n "${{ github.event.inputs.season }}" ]; then
-            python -m midnight_stats.build --season "${{ github.event.inputs.season }}" --quiet
+          if [ -n "$REQUESTED_SEASON" ]; then
+            python -m midnight_stats.build --season "$REQUESTED_SEASON" --quiet
           fi
           python -m midnight_stats.build --quiet
 
