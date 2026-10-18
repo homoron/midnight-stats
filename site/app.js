@@ -15,6 +15,8 @@ const PERIOD_NAMES = { 1: "1er cuarto", 2: "2º cuarto", 3: "3er cuarto", 4: "4�
 
 const app = document.getElementById("app");
 const tooltip = document.getElementById("tooltip");
+const themeToggle = document.getElementById("theme-toggle");
+const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
 
 /* ======================================================================= utilities */
 
@@ -1119,10 +1121,20 @@ function applyTheme() {
   const theme = storage.get("theme", "auto");
   if (theme === "auto") delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;
+
+  const isDark = theme === "dark" || (theme === "auto" && systemTheme.matches);
+  const label = isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  themeToggle.dataset.nextTheme = isDark ? "light" : "dark";
+  themeToggle.setAttribute("aria-label", label);
+  themeToggle.title = label;
+  themeToggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${isDark
+    ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41m0-16.14-1.41 1.41M6.34 17.66l-1.41 1.41"/>'
+    : '<path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/>'}</svg>`;
+  const themeSelect = document.querySelector('[data-setting="theme"]');
+  if (themeSelect) themeSelect.value = theme;
 }
 
 function updateChrome(ctx, route, args) {
-  document.getElementById("group-chip").textContent = `${titleCase(ctx.group.name)} · ${ctx.season.name}`;
   let nav = route.nav;
   if (route.view === viewTeam && args[0] === ctx.favoriteId) nav = "team";
   for (const link of document.querySelectorAll(".tabbar a")) {
@@ -1164,6 +1176,11 @@ async function render({ keepScroll = false } = {}) {
 
 document.addEventListener("click", (event) => {
   const action = event.target.closest("[data-action]");
+  if (action?.dataset.action === "toggle-theme") {
+    storage.set("theme", themeToggle.dataset.nextTheme);
+    applyTheme();
+    drawCharts();
+  }
   if (action?.dataset.action === "retry") render();
   if (action?.dataset.action === "favorite") {
     storage.set("settings", { ...storage.get("settings", {}), favoriteTeamId: action.dataset.team, favoriteTeamName: action.dataset.name });
@@ -1196,6 +1213,13 @@ document.addEventListener("change", (event) => {
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") render({ keepScroll: true });
+});
+
+systemTheme.addEventListener("change", () => {
+  if (storage.get("theme", "auto") === "auto") {
+    applyTheme();
+    drawCharts();
+  }
 });
 
 window.addEventListener("hashchange", () => render());
