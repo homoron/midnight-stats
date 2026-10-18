@@ -732,7 +732,7 @@ function scoresheetCheckPanel(ctx, match) {
 }
 
 function updateScoresheetCheck(id, pending, message, stage) {
-  const status = pending ? `${message} Esto puede tardar unos minutos. No hace falta volver a pulsar.` : message;
+  const status = pending ? `${message} Esto puede tardar unos minutos.` : message;
   scoresheetChecks.set(id, { pending, message: status, stage });
   const panel = document.querySelector(`[data-scoresheet-check="${id}"]`);
   if (!panel) return;
