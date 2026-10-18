@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -15,7 +16,7 @@ from .stats import add_roster_players, aggregate_players, aggregate_teams
 
 
 def parse_match(pdf_bytes: bytes, calendar_match: dict, detail: dict, roster: list[dict],
-                uploaded_at: str | None = None) -> dict:
+                uploaded_at: str | None = None, on_progress: Callable[[str], None] | None = None) -> dict:
     """Parse one finished match without network access, using the workflow's reader."""
     if calendar_match.get("status") not in FINAL_STATUSES:
         raise ValueError("Only a finished match can be checked")
@@ -28,17 +29,20 @@ def parse_match(pdf_bytes: bytes, calendar_match: dict, detail: dict, roster: li
         download=lambda url: (pdf_bytes, uploaded_at),
         match_players=lambda match_id: roster,
     )
+    report = on_progress or (lambda task: None)
     with TemporaryDirectory() as directory:
         match = build_match(client, calendar_match, calendar_match.get("round", 0),
-                            Path(directory), lambda message: None)
+                            Path(directory), lambda message: None, report)
     if match is None:
         raise ValueError("The scoresheet is not available yet")
+    report("match")
     for side in ("home", "away"):
         team = match[side]
         if team.get("final_score") is None or sum(player.get("pts", 0) for player in team["players"]) != team["final_score"]:
             raise ValueError("The scoresheet points could not be validated")
     if any(event["points"] not in (1, 2, 3) for event in match["scoring"]):
         raise ValueError("The scoresheet contains an invalid points increment")
+    report("validated")
     return match
 
 

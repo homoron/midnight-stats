@@ -32,6 +32,15 @@ def test_lector_manual_reutiliza_el_parser_y_los_ids_de_jugadores(match_data):
                if event["team"] == "home" and event["number"] == "54")
 
 
+def test_progreso_manual_cuenta_el_cruce_y_la_validacion_solo_al_terminar(match_data):
+    calendar, detail, roster = match_data
+    completed = []
+    pdf = (Path(__file__).parent / "fixtures" / "midnight-fivi-2026-10-04.pdf").read_bytes()
+    match = parse_match(pdf, calendar, detail, roster, on_progress=completed.append)
+    assert completed == ["pdf-text", "pdf-header", "pdf-home", "pdf-away", "pdf-scoring", "match", "validated"]
+    assert match["home"]["final_score"] == 47
+
+
 def test_lector_manual_no_procesa_partidos_en_directo(match_data):
     calendar, detail, roster = match_data
     calendar["status"] = "LIVE"
@@ -67,8 +76,10 @@ def test_lector_manual_rechaza_puntos_que_no_cuadran(match_data, monkeypatch):
     broken = {"home": {"final_score": 10, "players": [{"pts": 4}]},
               "away": {"final_score": 0, "players": []}, "scoring": []}
     monkeypatch.setattr("midnight_stats.browser.build_match", lambda *args: broken)
+    completed = []
     with pytest.raises(ValueError, match="points"):
-        parse_match(b"", calendar, detail, roster)
+        parse_match(b"", calendar, detail, roster, on_progress=completed.append)
+    assert completed == ["match"]
 
 
 def test_mezcla_manual_actualiza_acumulados_sin_duplicar_y_conserva_los_dos_dorsales_cinco():

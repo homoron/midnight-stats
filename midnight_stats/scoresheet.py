@@ -14,7 +14,7 @@ import logging
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
 import pdfplumber
 
@@ -358,8 +358,9 @@ def _parse_running_score(words: list[dict], sheet: Scoresheet, top: float, botto
 # --------------------------------------------------------------------------- entry point
 
 
-def parse_scoresheet(source) -> Scoresheet:
+def parse_scoresheet(source, on_progress: Callable[[str], None] | None = None) -> Scoresheet:
     """Parse a scoresheet PDF given as a path, bytes or file-like object."""
+    report = on_progress or (lambda task: None)
     if isinstance(source, (bytes, bytearray)):
         import io
         source = io.BytesIO(source)
@@ -369,10 +370,12 @@ def parse_scoresheet(source) -> Scoresheet:
     with pdfplumber.open(source) as pdf:
         page = pdf.pages[0]
         words = page.extract_words(extra_attrs=["non_stroking_color", "size"])
+        report("pdf-text")
         sheet = Scoresheet(home=TeamSheet(name=""), away=TeamSheet(name=""))
 
         _parse_header(words, sheet)
         _parse_results(words, sheet)
+        report("pdf-header")
 
         player_headers = sorted((w for w in words if w["text"] == "Jugadores"), key=lambda w: w["top"])
         coach_labels = sorted((w for w in words if w["text"] == "Entrenador" and w["x0"] < 100),
@@ -385,11 +388,13 @@ def parse_scoresheet(source) -> Scoresheet:
                 _parse_players(page, words, player_headers[i], footer, team)
             if i < len(timeout_labels):
                 _parse_timeouts(words, timeout_labels[i], team)
+            report("pdf-home" if i == 0 else "pdf-away")
 
         grid_headers = [w for w in words if w["text"] in ("A", "B") and w["x0"] > 262]
         grid_top = min((w["top"] for w in grid_headers), default=100) + 5
         period_headers = [w["top"] for w in words if w["text"] == "Periodo" and w["x0"] > 250]
         grid_bottom = min(period_headers, default=page.height) - 3
         _parse_running_score(words, sheet, grid_top, grid_bottom)
+        report("pdf-scoring")
 
     return sheet

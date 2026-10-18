@@ -20,6 +20,7 @@ import json
 import sys
 import time
 import unicodedata
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -112,7 +113,7 @@ def _from_cache(client: Nbn23Client, cached: dict, cache_file: Path) -> dict:
 
 
 def build_match(client: Nbn23Client, calendar_match: dict, round_number: int, cache_dir: Path,
-                log) -> dict | None:
+                log, on_progress: Callable[[str], None] | None = None) -> dict | None:
     """Return the parsed stats of a closed match, using the cache whenever possible."""
     match_id = calendar_match["id"]
     cache_file = cache_dir / f"{match_id}.json"
@@ -134,7 +135,7 @@ def build_match(client: Nbn23Client, calendar_match: dict, round_number: int, ca
 
     log(f"    acta {calendar_match['homeTeam']['name']} - {calendar_match['awayTeam']['name']}")
     pdf_bytes, uploaded_at = client.download(url)
-    sheet = parse_scoresheet(pdf_bytes).to_dict()
+    sheet = parse_scoresheet(pdf_bytes, on_progress=on_progress).to_dict()
     roster = client.match_players(match_id)
 
     home_api, away_api = detail["homeTeam"], detail["awayTeam"]

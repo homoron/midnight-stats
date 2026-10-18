@@ -31,13 +31,13 @@ function resetWorker(error) {
 
 function requestReader(action, payload, onProgress = () => {}) {
   if (!worker) {
-    worker = new Worker(new URL("reader-worker.js?v=11", import.meta.url));
+    worker = new Worker(new URL("reader-worker.js?v=13", import.meta.url));
     worker.onerror = () => resetWorker(new Error("The scoresheet reader could not start"));
     worker.onmessage = ({ data }) => {
       const request = requests.get(data.id);
       if (!request) return;
       if (data.type === "progress") {
-        request.onProgress(data.message, data.stage);
+        request.onProgress(data.message, data.stage, data.completed);
       } else if (data.type === "error") {
         resetWorker(new Error(data.message));
       } else {
@@ -75,6 +75,7 @@ export async function readScoresheet(calendar, detail, roster, onProgress) {
     if (String.fromCharCode(...bytes.slice(0, 5)) !== "%PDF-") throw new Error("The scoresheet is not a PDF");
     const modified = response.headers.get("Last-Modified");
     if (modified && !Number.isNaN(Date.parse(modified))) uploadedAt = new Date(modified).toISOString();
+    onProgress("Acta descargada…", "download", ["download"]);
   } finally {
     clearTimeout(timer);
   }
@@ -116,6 +117,7 @@ export async function incorporateManualMatch(base, groupId, match, storage, onPr
   const checkedAt = new Date().toISOString();
   onProgress("Actualizando estadísticas…", "update");
   const merged = await requestReader("merge", { base, matches: [match], checkedAt }, onProgress);
+  onProgress("Estadísticas calculadas…", "update", ["aggregated"]);
   const saved = readCache(storage, groupId);
   const baseGeneratedAt = Object.prototype.hasOwnProperty.call(base, "_server_generated_at")
     ? base._server_generated_at : base.generated_at || null;
@@ -124,5 +126,6 @@ export async function incorporateManualMatch(base, groupId, match, storage, onPr
     baseGeneratedAt, snapshot,
     records: { ...saved?.records, [match.id]: { match, checkedAt } },
   });
+  onProgress("Acta incorporada…", "complete", ["saved"]);
   return snapshot;
 }

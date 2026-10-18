@@ -12,7 +12,7 @@ temporadas anteriores. Ver `README.md`.
 - La interfaz va en **español**. El código, los comentarios y los nombres de variables, **siempre en inglés**.
   Los textos de los tests (nombres de las funciones `test_...`) pueden ir en español.
 - **TDD obligatorio** para cualquier funcionalidad nueva de Python: primero el test, comprobar que falla, implementar
-  lo mínimo y refactorizar. Ahora mismo hay 59 tests en verde (`py -3.14 -m pytest`).
+  lo mínimo y refactorizar. Ahora mismo hay 62 tests en verde (`py -3.14 -m pytest`).
 - Python: en esta máquina usar `py -3.14`, porque `python` es la 3.9 y el proyecto necesita 3.10 o superior.
   Node local: v14 (antiguo).
 - `graphify-out/`, `cache/`, `site/data/`, `logs/` y `reports/` están en `.gitignore`. No subirlos.

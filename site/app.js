@@ -2,7 +2,8 @@
 // Live data (calendar, standings, scores) comes straight from the public NBN23 API used by the
 // official website; per-player stats come from the workflow or an on-demand scoresheet check.
 
-import { restoreManualStats, readScoresheet, incorporateManualMatch } from "./manual-reader.js?v=11";
+import { restoreManualStats, readScoresheet, incorporateManualMatch } from "./manual-reader.js?v=13";
+import { readerProgress } from "./reader-progress.js?v=13";
 
 const API_BASE = "https://api.swish.nbn23.com";
 // Public read-only key published by alqueriadelbasket.com in its NBN23 widget.
@@ -709,31 +710,34 @@ function previewTab(ctx, m) {
   </div>`;
 }
 
-const SCORESHEET_STAGES = ["download", "prepare", "read", "update"];
-
-function scoresheetProgress(stage) {
-  const index = SCORESHEET_STAGES.indexOf(stage);
-  const label = index < 0 ? "Comprobando disponibilidad" : `Paso ${index + 1} de ${SCORESHEET_STAGES.length}`;
-  return `<progress max="${SCORESHEET_STAGES.length}" ${index < 0 ? "" : `value="${index}"`}
-    aria-label="Progreso de comprobación del acta" aria-valuetext="${label}"></progress><span class="small subtle">${label}</span>`;
+function scoresheetProgress(completed) {
+  const { percent, completed: count, total } = readerProgress(completed);
+  const label = `${percent} % · ${count} de ${total} tareas completadas`;
+  return `<progress max="100" value="${percent}" aria-label="Progreso de comprobación del acta"
+    aria-valuetext="${label}"></progress><span class="small subtle">${label}</span>`;
 }
 
 function scoresheetCheckPanel(ctx, match) {
-  if (!isFinal(match) || isBye(match) || statsMatch(ctx, match.id)
+  if (!isFinal(match) || isBye(match)
     || !ctx.matches.some((known) => known.id === match.id)) return "";
   const state = scoresheetChecks.get(match.id);
+  if (statsMatch(ctx, match.id)) return state?.complete
+    ? '<div class="notice" role="status">Acta incorporada · 100 %</div>' : "";
   return `<section class="card card-pad scoresheet-check" data-scoresheet-check="${esc(match.id)}">
     <button type="button" class="btn" data-action="check-scoresheet" data-match-id="${esc(match.id)}"
       data-group-id="${esc(ctx.group.id)}" ${state?.pending ? "disabled" : ""}>${state?.pending ? "Comprobando acta…" : "Comprobar acta"}</button>
-    <div class="scoresheet-progress" ${state?.pending ? "" : "hidden"}>${state?.pending ? scoresheetProgress(state.stage) : ""}</div>
+    <div class="scoresheet-progress" ${state?.pending ? "" : "hidden"}>${state?.pending ? scoresheetProgress(state.completed) : ""}</div>
     <p class="small subtle" role="status" aria-live="polite">${esc(state?.message
       || "Busca el acta oficial y añade las estadísticas en este dispositivo. La primera comprobación puede tardar un poco más.")}</p>
   </section>`;
 }
 
-function updateScoresheetCheck(id, pending, message, stage) {
+function updateScoresheetCheck(id, pending, message, stage, completedTasks = []) {
   const status = pending ? `${message} Esto puede tardar unos minutos.` : message;
-  scoresheetChecks.set(id, { pending, message: status, stage });
+  const previous = scoresheetChecks.get(id);
+  const completed = new Set(previous?.pending ? previous.completed : []);
+  for (const task of completedTasks) completed.add(task);
+  scoresheetChecks.set(id, { pending, message: status, stage, completed });
   const panel = document.querySelector(`[data-scoresheet-check="${id}"]`);
   if (!panel) return;
   const button = panel.querySelector("button");
@@ -741,7 +745,7 @@ function updateScoresheetCheck(id, pending, message, stage) {
   button.textContent = pending ? "Comprobando acta…" : "Comprobar acta";
   const progress = panel.querySelector(".scoresheet-progress");
   progress.hidden = !pending;
-  progress.innerHTML = pending ? scoresheetProgress(stage) : "";
+  progress.innerHTML = pending ? scoresheetProgress(completed) : "";
   panel.querySelector('[role="status"]').textContent = status;
 }
 
@@ -749,18 +753,20 @@ async function checkScoresheet(id, groupId) {
   const ctx = currentContext;
   const known = ctx?.matches.find((match) => match.id === id);
   if (!known || isBye(known) || ctx.group.id !== groupId || scoresheetChecks.get(id)?.pending) return;
-  const onProgress = (message, stage) => updateScoresheetCheck(id, true, message, stage);
+  const onProgress = (message, stage, completed) => updateScoresheetCheck(id, true, message, stage, completed);
   const notPublished = "El acta todavía no está publicada. Prueba dentro de unos minutos.";
   onProgress("Buscando acta…");
   try {
     memo.delete(`stats:${groupId}`);
     const published = await statsFor(groupId);
+    onProgress("Comprobando el acta oficial…", "check", ["published"]);
     if (published?.matches?.[id]) {
       scoresheetChecks.delete(id);
       if (currentContext?.group.id === groupId) await render({ keepScroll: true });
       return;
     }
     const detail = await api(`/match/${id}`, 0);
+    onProgress("Comprobando el acta oficial…", "check", ["details"]);
     const match = { ...known, ...detail, round: known.round };
     if (!isFinal(match)) {
       updateScoresheetCheck(id, false, "El partido todavía no ha finalizado.");
@@ -771,6 +777,7 @@ async function checkScoresheet(id, groupId) {
       return;
     }
     const roster = await api(`/match/${id}/players`, 0);
+    onProgress("Plantillas obtenidas…", "check", ["roster"]);
     const parsed = await readScoresheet(match, detail, roster, onProgress);
     const base = published || ctx.stats || {
       group_id: groupId, group_name: ctx.group.name, generated_at: null,
@@ -778,7 +785,8 @@ async function checkScoresheet(id, groupId) {
     };
     const merged = await incorporateManualMatch(base, groupId, parsed, storage, onProgress);
     memo.set(`stats:${groupId}`, { time: Date.now(), promise: Promise.resolve(merged) });
-    scoresheetChecks.delete(id);
+    const progress = scoresheetChecks.get(id);
+    scoresheetChecks.set(id, { ...progress, pending: false, complete: readerProgress(progress.completed).percent === 100 });
     if (currentContext?.group.id === groupId) await render({ keepScroll: true });
   } catch (error) {
     console.warn("The manual scoresheet check failed", error);

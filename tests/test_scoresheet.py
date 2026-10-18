@@ -16,6 +16,26 @@ def by_number(team):
     return {p.number: p for p in team.players}
 
 
+def test_progreso_avanza_despues_de_leer_cada_seccion_del_acta():
+    completed = []
+    parsed = parse_scoresheet(FIXTURE, on_progress=completed.append)
+    assert completed == ["pdf-text", "pdf-header", "pdf-home", "pdf-away", "pdf-scoring"]
+    assert (parsed.home.final_score, parsed.away.final_score) == (47, 53)
+    assert sum(player.pts for player in parsed.home.players) == 47
+
+
+def test_progreso_no_cuenta_una_seccion_que_falla(monkeypatch):
+    completed = []
+
+    def fail_header(*args):
+        raise ValueError("Header extraction failed")
+
+    monkeypatch.setattr("midnight_stats.scoresheet._parse_header", fail_header)
+    with pytest.raises(ValueError, match="Header"):
+        parse_scoresheet(FIXTURE, on_progress=completed.append)
+    assert completed == ["pdf-text"]
+
+
 def test_lee_cabecera_del_acta(sheet):
     assert sheet.home.name == "MIDNIGHT"
     assert sheet.away.name == "FIVI"

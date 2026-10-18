@@ -1,5 +1,11 @@
 import assert from "assert";
 import { publicScoresheetUrl, unpublishedRecords, restoreManualStats, readScoresheet } from "../site/manual-reader.js";
+import { READER_TASKS, readerProgress } from "../site/reader-progress.js";
+
+assert.deepStrictEqual(readerProgress([]), { percent: 0, completed: 0, total: 18 });
+assert.deepStrictEqual(readerProgress(["published", "published", "unknown"]), { percent: 5, completed: 1, total: 18 });
+assert.strictEqual(readerProgress(READER_TASKS.filter((task) => task !== "saved")).percent, 94);
+assert.strictEqual(readerProgress(READER_TASKS).percent, 100);
 
 assert.strictEqual(
   publicScoresheetUrl("https://storage.googleapis.com/match-scorecard-pdf/alqueriabasket/match.pdf"),

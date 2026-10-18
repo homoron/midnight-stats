@@ -32,8 +32,11 @@ Los marcadores en directo se actualizan por separado desde el navegador.
 En la ficha de un partido terminado que aún no tiene estadísticas aparece **Comprobar acta**. Busca el PDF
 oficial y ejecuta el mismo parser de Python en un worker con Pyodide, que se descarga solo al necesitarlo.
 La primera comprobación puede tardar más. Si todavía no está publicada, se indica para intentarlo más tarde.
-Mientras trabaja, el botón queda desactivado y una barra muestra las fases reales (descarga, preparación,
-lectura y actualización), sin estimar un porcentaje de tiempo ni una duración exacta.
+Mientras trabaja, el botón queda desactivado y una barra muestra el porcentaje de tareas terminadas:
+consultas, descarga, preparación del lector, secciones del acta, cruce, validación, acumulados y guardado.
+Se calcula como tareas completadas / tareas totales (18), sin duplicar tareas ni avanzar por tiempo.
+Las tareas pueden durar distinto: el porcentaje mide trabajo terminado, sin estimar segundos restantes.
+Solo llega al 100 % después de incorporar y guardar las estadísticas en ese navegador.
 El resultado actualiza el partido y los acumulados y se guarda **en ese navegador**; la siguiente publicación
 automática lo incorpora para todos y tiene prioridad, sin contar dos veces el partido.
 
