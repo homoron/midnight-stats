@@ -26,6 +26,9 @@ libres), el quinteto inicial (la X rodeada con un círculo), los capitanes, los 
 
 El acta **no** registra fallos, rebotes, asistencias ni minutos, así que esos datos no existen.
 
+Las estadísticas del acta se incorporan cuando el partido ha finalizado y el PDF ya está publicado.
+Los marcadores en directo se actualizan por separado desde el navegador.
+
 Cada acta pasa por una validación automática:
 - la suma de puntos de los jugadores debe coincidir con el marcador;
 - los parciales deben sumar el resultado;
@@ -76,9 +79,14 @@ py -3.14 -m midnight_stats.validate --season 2025/2026 --report reports/validaci
 1. Sube esta carpeta a un repositorio de GitHub.
 2. En el repositorio, ve a **Settings → Pages → Build and deployment** y elige **GitHub Actions**.
 3. El workflow `.github/workflows/update.yml` hace el resto:
-   - actualiza las estadísticas cada 10 minutos los fines de semana y cada 3 horas entre semana;
+   - programa la actualización de estadísticas cada 10 minutos los fines de semana y cada 3 horas entre semana;
    - publica la app en `https://<usuario>.github.io/<repo>/`.
 4. Para cargar una temporada antigua, ve a **Actions → Actualizar estadísticas → Run workflow** e indica la temporada.
+
+Los horarios de GitHub Actions son aproximados: sus ejecuciones programadas pueden retrasarse o descartarse
+por carga del servicio. La programación evita los minutos redondos para reducir ese riesgo, pero no garantiza
+una actualización cada diez minutos. Si los datos se quedan antiguos, se puede lanzar el workflow manualmente
+desde Actions. Véase la [documentación de GitHub](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows).
 
 En el móvil, «Añadir a pantalla de inicio» la instala como una app.
 

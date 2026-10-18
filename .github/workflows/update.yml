@@ -3,10 +3,10 @@ name: Actualizar estadísticas
 
 on:
   schedule:
-    # Weekends (match days): every 10 minutes between 08:00 and 22:59 UTC
-    - cron: "*/10 8-22 * * 6,0"
-    # Weekdays: every 3 hours
-    - cron: "0 */3 * * 1-5"
+    # Weekends: every 10 minutes, offset from busy round minutes (08:00-22:59 UTC).
+    - cron: "3-59/10 8-22 * * 6,0"
+    # Weekdays: every 3 hours, away from the start of the hour.
+    - cron: "13 */3 * * 1-5"
   push:
     branches: [main]
   workflow_dispatch:
@@ -56,9 +56,9 @@ jobs:
           REQUESTED_SEASON: ${{ inputs.season }}
         run: |
           if [ -n "$REQUESTED_SEASON" ]; then
-            python -m midnight_stats.build --season "$REQUESTED_SEASON" --quiet
+            python -m midnight_stats.build --season "$REQUESTED_SEASON"
           fi
-          python -m midnight_stats.build --quiet
+          python -m midnight_stats.build
 
       - uses: actions/upload-pages-artifact@v3
         with:
