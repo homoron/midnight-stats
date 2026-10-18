@@ -1,0 +1,73 @@
+# Rebuilds player stats from the official scoresheets and publishes the app on GitHub Pages.
+name: Actualizar estadísticas
+
+on:
+  schedule:
+    # Weekends (match days): every 10 minutes between 08:00 and 22:59 UTC
+    - cron: "*/10 8-22 * * 6,0"
+    # Weekdays: every 3 hours
+    - cron: "0 */3 * * 1-5"
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Temporada a reconstruir (ej. 2025/2026). Vacío = la actual"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Tests
+        run: python -m pytest -q
+
+      # Parsed scoresheets and previous seasons survive between runs, so only new matches are downloaded.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            cache
+            site/data
+          key: midnight-stats-data-${{ github.run_id }}
+          restore-keys: midnight-stats-data-
+
+      - name: Generar estadísticas
+        run: |
+          if [ -n "${{ github.event.inputs.season }}" ]; then
+            python -m midnight_stats.build --season "${{ github.event.inputs.season }}" --quiet
+          fi
+          python -m midnight_stats.build --quiet
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

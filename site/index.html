@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Midnight Stats</title>
+  <meta name="description" content="Calendario, resultados, clasificación y estadísticas de la Liga Senior de L'Alqueria del Basket.">
+  <meta name="theme-color" content="#10204a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css?v=3">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="Midnight Stats, inicio">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2.5"/>
+        <path d="M3 16h26M16 3v26M7 6.5c4 3 6 6 6 9.5s-2 6.5-6 9.5M25 6.5c-4 3-6 6-6 9.5s2 6.5 6 9.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <span>Midnight Stats</span>
+    </a>
+    <a class="group-chip" id="group-chip" href="#/ajustes" aria-label="Cambiar competición">…</a>
+  </header>
+
+  <main id="app" tabindex="-1" aria-live="polite"></main>
+
+  <nav class="tabbar" aria-label="Secciones">
+    <a href="#/" data-nav="home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      <span>Inicio</span>
+    </a>
+    <a href="#/calendario" data-nav="calendar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v3M17 2v3M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>
+      <span>Jornadas</span>
+    </a>
+    <a href="#/clasificacion" data-nav="standings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      <span>Clasificación</span>
+    </a>
+    <a href="#/lideres" data-nav="leaders">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>
+      <span>Líderes</span>
+    </a>
+    <a href="#/mi-equipo" data-nav="team">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>
+      <span>Mi equipo</span>
+    </a>
+  </nav>
+
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+  <script type="module" src="app.js?v=3"></script>
+</body>
+</html>

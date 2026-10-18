@@ -1,0 +1,14 @@
+{
+  "name": "Midnight Stats",
+  "short_name": "Midnight Stats",
+  "description": "Calendario, resultados, clasificación y estadísticas de la Liga Senior de L'Alqueria del Basket.",
+  "lang": "es",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#10204a",
+  "theme_color": "#10204a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

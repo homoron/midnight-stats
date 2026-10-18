@@ -1,0 +1,14 @@
+# Generated data (rebuilt by `python -m midnight_stats.build`)
+cache/
+site/data/
+logs/
+reports/
+
+# Code graph (graphify) stays out of commits
+graphify-out/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/

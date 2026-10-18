@@ -1,0 +1,75 @@
+{
+  "_instrucciones": "Nombres y fotos por equipo. Cada jugador se empareja por nombre (o por dorsal si aún no tiene nombre). El nombre del acta siempre tiene prioridad. Fotos: URL o ruta en site/fotos/, solo con permiso de cada jugador.",
+  "MIDNIGHT": [
+    {
+      "number": "0",
+      "name": "Mario San Pedro Navarro",
+      "photo": "https://storage.leverade.com/profiles/images/a6142f8dfd6a4512d4a0e270140f96f86b591cfa.200x200.jpg"
+    },
+    {
+      "number": "5",
+      "name": "Iván Cardos García",
+      "photo": "https://storage.leverade.com/profiles/images/9d56c4292e4dccade35945bac1c9c9fcb59c220b.200x200.jpg"
+    },
+    {
+      "number": "5",
+      "name": "Nahun Balladares Bohorquez",
+      "photo": "https://storage.leverade.com/profiles/images/1b04959294c82b77eb6e0253bc3aa8923f423e5a.200x200.jpg"
+    },
+    {
+      "number": "8",
+      "name": "Jordi Hervas Tomas",
+      "photo": "https://storage.leverade.com/profiles/images/85b3faa4ee770a00ea2ac7ebef72cd6e97ca9f97.200x200.jpg"
+    },
+    {
+      "number": "9",
+      "name": "David Iñiguez Garcia",
+      "photo": "https://storage.leverade.com/profiles/images/830a48ce238d9ce8656fcba1ce10cf2c31ad6688.200x200.jpg"
+    },
+    {
+      "number": "10",
+      "name": "Sergio Redondo Benitez",
+      "photo": "https://storage.leverade.com/profiles/images/c3c8043c78c336024a96f2dec7e8001b5262aaa2.200x200.jpg"
+    },
+    {
+      "number": "21",
+      "name": "Robert Davila Martinez",
+      "photo": "https://storage.leverade.com/profiles/images/c08693a0b16e707967342ba1daf751651a0e5a13.200x200.jpg"
+    },
+    {
+      "number": "22",
+      "name": "Carlos Sanchez Abril",
+      "photo": "https://storage.leverade.com/profiles/images/586f98a284979b577f99ee678d8365793433cce7.200x200.jpg"
+    },
+    {
+      "number": "23",
+      "name": "Manuel Moreno Ruiz",
+      "photo": "https://storage.leverade.com/profiles/images/85d1b6149f1aa4561eaa677b13342e2d3ac3417c.200x200.jpg"
+    },
+    {
+      "number": "32",
+      "name": "Alejandro Garcia Moreno",
+      "photo": "https://storage.leverade.com/profiles/images/8fd1c9f2b1dd584082f9e15198c12079f7f7453a.200x200.jpg"
+    },
+    {
+      "number": "54",
+      "name": "Oscar Lago Angel",
+      "photo": "https://storage.leverade.com/profiles/images/f5c739cc91e71da310b86d114836d0f19a616779.200x200.jpg"
+    },
+    {
+      "number": "55",
+      "name": "Adrian Ramirez Galera",
+      "photo": "https://storage.leverade.com/profiles/images/befb7f4d1ffa09fa849d3ecd605213bf58fc442b.200x200.jpg"
+    },
+    {
+      "number": "66",
+      "name": "Jorge Pinilla Zamora",
+      "photo": "https://storage.leverade.com/profiles/images/9ce1f316abb0844b2513488134de13c642a988cf.200x200.jpg"
+    },
+    {
+      "number": "73",
+      "name": "Carles Aznar Martinez",
+      "photo": "https://storage.leverade.com/profiles/images/edc9fc64dba4385a1f8692c77af18ad8c0c24094.200x200.jpg"
+    }
+  ]
+}
